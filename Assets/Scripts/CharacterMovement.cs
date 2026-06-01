@@ -17,8 +17,10 @@ public class CharacterMovement :  MonoBehaviour
         Cursor.visible=false;
 
         yRotation = transform.localEulerAngles.y;
-
+        controller = GetComponent<CharacterController>();
     }
+    private CharacterController controller;
+
     void Update(){
         Move();
         look();
