@@ -11,6 +11,8 @@ public class CharacterMovement :  MonoBehaviour
 
     float xRotation = 0f;
 
+    private CharacterController controller;
+
     void Update(){
         Move();
         look();
@@ -20,7 +22,9 @@ public class CharacterMovement :  MonoBehaviour
     {
         Cursor.lockState=CursorLockMode.Locked;
         Cursor.visible=false;
+        controller = GetComponent<CharacterController>();
     }
+
     void Move(){
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
@@ -29,7 +33,8 @@ public class CharacterMovement :  MonoBehaviour
         Vector3 right = transform.right;
 
         Vector3 movement = forward*z+right*x;
-        transform.position += movement *speed*Time.deltaTime;
+        //transform.position += movement *speed*Time.deltaTime;
+        controller.Move(movement * speed * Time.deltaTime);
     }
     void look()
     {
