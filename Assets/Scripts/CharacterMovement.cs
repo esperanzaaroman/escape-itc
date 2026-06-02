@@ -4,10 +4,10 @@ using UnityEngine;
 public class CharacterMovement :  MonoBehaviour
 {
     
-    public float speed = 50f;
+    public float speed = 12f;
 
     public Transform cameraTransform;
-    public float mouseSensitivity = 3f;
+    public float mouseSensitivity = 20f;
 
     float xRotation = 0f;
     float yRotation = 0f;
@@ -41,11 +41,10 @@ public class CharacterMovement :  MonoBehaviour
             Matrix4x4 rotMatrix = Transformations.RotateM(yRotation,Transformations.AXIS.AX_Y);
             Vector4 worldMovement = rotMatrix * new Vector4(localMovement.x,localMovement.y,localMovement.z,0f);
 
-            Matrix4x4 translationMatrix = Transformations.TranslateM(worldMovement.x,worldMovement.y,worldMovement.z);
+            Vector3 finalMovement = new Vector3(worldMovement.x, worldMovement.y, worldMovement.z);
 
-            Vector4 newPos = translationMatrix*currentPos;
-            
-            transform.position = new Vector3(newPos.x,newPos.y,newPos.z);
+           
+            controller.Move(finalMovement);
         }
     }
     void look()
