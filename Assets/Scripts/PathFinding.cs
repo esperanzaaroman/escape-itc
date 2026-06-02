@@ -10,7 +10,7 @@ public class PathFinding
         return Mathf.Abs(a.x-b.x)+ Mathf.Abs(a.y-b.y); //Distancia Manhattan uwu
     }
 
-    void RetracePath(Node inicio,Node fin)
+    public List<Node> RetracePath(Node inicio,Node fin)
     {
         List<Node> path =
             new List<Node>(); //crea path vacio
@@ -28,13 +28,12 @@ public class PathFinding
         {
             Debug.Log($"{n.x},{n.y}"); //xd
         }
+        return path;
     }
-    public void FindPath(Vector2Int inicio, Vector2Int destino)
+    public List<Node> FindPath(Node startNode, Node targetNode, Queue<Node> historialProfe)
     {
-        Node startNode =
-            gridManager.grid[inicio.x,inicio.y]; //Saca las coords de donde estoy y del destine (la moneda)
-        Node targetNode =
-            gridManager.grid[destino.x,destino.y];
+        if (startNode == null || targetNode == null) 
+        return new List<Node>();
 
         List<Node> openSet = //lista de nodos a explorar (las hojitas del grafo) los vecinos cercanos vaya
             new List<Node>();
@@ -58,11 +57,15 @@ public class PathFinding
 
             closedSet.Add(currentNode); //lo pone el closed
 
+            if (currentNode == targetNode)
+            {
+                return RetracePath(startNode, targetNode); 
+            }
             foreach(Node vecino in 
                 gridManager.GetNeighbours(currentNode) //saca sus vecinichos (visiten la funcion en grid manager)
             )
             {
-                if(!vecino.walkable||closedSet.Contains(vecino)) // checa si no es pared (walkable) o si ya lo visitamos 
+                if(!vecino.walkable||closedSet.Contains(vecino)|| (historialProfe != null && historialProfe.Contains(vecino))) // checa si no es pared (walkable) o si ya lo visitamos 
                     continue; //si pasa el if se salta al sig vecino (no reviso si ya llegue al mejor de los closed porque manhattan es padre y eso no ocurre (en teoria))
 
                 int nuevoCosto = currentNode.gCost+GetDistance(currentNode,vecino); //crea el costo con dist manhattan
@@ -83,11 +86,7 @@ public class PathFinding
             }
 
 
-            if (currentNode == targetNode)
-            {
-                RetracePath(startNode,targetNode); //crea el bello path de donde estoy a donde quiero llegar
-                return;
-            }
         }
+        return new List<Node>();
     }
 }

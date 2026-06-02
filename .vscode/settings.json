@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "escapeee-2026-05-31_22-18-20.slnx",
+    "dotnet.defaultSolution": "escapeee.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

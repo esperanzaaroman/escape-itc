@@ -10,7 +10,9 @@ public class coin : MonoBehaviour
 
     private Queue<Node> historialNodos = new Queue<Node>();
     public int capacidadMemoria = 6; // Cuántos nodos hacia atrás recordará
-        
+    public Node getCurrentNode(){
+        return currentNode;
+    }  
     void ChooseRandomNode()
     {
         List<Node> vecinos = gridManager.GetNeighbours(currentNode);
