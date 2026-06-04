@@ -5,17 +5,23 @@ using System.Collections;
 public class profe : MonoBehaviour
 {
     public coin objetivo;
-    public float speed = 20f;
+    public float speed = 10f;
     public GridManager gridManager;
     public PathFinding PathFinding;
     
     private Node currentNode;
     private Node targetNode;
     private List<Node> currentPath = new List<Node>();
-    private bool estaMoviendose = false;
 
+    private Coroutine corrutinaMovimiento;
+
+    // Memoria usando únicamente la cola tradicional
     private Queue<Node> historialNodos = new Queue<Node>();
-    public int capacidadMemoria = 12; // Cuántos nodos hacia atrás recordará el profe
+    public int capacidadMemoria = 5; 
+
+    [Header("Configuración de Optimización")]
+    public float tiempoEntreRecalculos = 0.5f; 
+    private float cronometro = 0f; 
 
     void Start()
     {   
@@ -42,65 +48,70 @@ public class profe : MonoBehaviour
     {
         if (gridManager == null || gridManager.grid == null || objetivo == null) return;
 
-        Node nodoActualReal = gridManager.NodeFromWorldPoint(transform.position);
-        if (nodoActualReal != null && nodoActualReal != currentNode)
+        cronometro += Time.deltaTime;
+
+        // CORRECCIÓN CRÍTICA: Solo permitimos recalcular si se cumplió el tiempo 
+        // Y ADEMÁS el Profe no está en medio de un movimiento intermedio entre nodos.
+        if (cronometro >= tiempoEntreRecalculos && corrutinaMovimiento == null)
         {
-            currentNode = nodoActualReal;
-            
-            // Cada vez que el profe pisa un nodo nuevo de verdad, lo guarda en su memoria
-            ActualizarHistorialMemoria(currentNode);
-        }
+            Node nodoMoneda = objetivo.getCurrentNode();
 
-        Node nodoMoneda = objetivo.getCurrentNode();
-
-        if (nodoMoneda != null && nodoMoneda != targetNode)
-        {
-            targetNode = nodoMoneda;
-            
-            // ─── LLAMADA MODIFICADA ───
-            // Le pasamos nuestro "historialNodos" al PathFinding para que los esquive
-            currentPath = PathFinding.FindPath(currentNode, targetNode, historialNodos);
-
-            // Si el camino da 0 porque la memoria bloqueó todas las opciones hacia la moneda,
-            // recalculamos de emergencia SIN memoria para que el profe no se quede congelado.
-            if ((currentPath == null || currentPath.Count == 0) && currentNode != targetNode)
+            if (nodoMoneda != null && nodoMoneda != targetNode)
             {
-                currentPath = PathFinding.FindPath(currentNode, targetNode, null);
+                targetNode = nodoMoneda;
+                
+                // Obtenemos nuestra posición real exacta en la cuadrícula antes de recalcular
+                Node nodoActualReal = gridManager.NodeFromWorldPoint(transform.position);
+                if (nodoActualReal != null)
+                {
+                    currentNode = nodoActualReal;
+                }
+
+                // Solicitamos la ruta pasando la cola directamente
+                currentPath = PathFinding.FindPath(currentNode, targetNode, historialNodos);
+
+                // Amnesia de emergencia si la memoria bloqueó todos los accesos posibles
+                if ((currentPath == null || currentPath.Count == 0) && currentNode != targetNode)
+                {
+                    currentPath = PathFinding.FindPath(currentNode, targetNode, null);
+                }
+
+                if (currentPath != null && currentPath.Count > 0)
+                {
+                    corrutinaMovimiento = StartCoroutine(SeguirCamino());
+                }
             }
 
-            if (currentPath != null && currentPath.Count > 0 && !estaMoviendose)
-            {
-                StartCoroutine(SeguirCamino());
-            }
+            cronometro = 0f;
         }
     }
 
-    // Registra los nodos visitados en la cola tal como lo hace la moneda
     void ActualizarHistorialMemoria(Node nodoVisitado)
     {
+        if (nodoVisitado == null) return;
+
         if (!historialNodos.Contains(nodoVisitado))
         {
             historialNodos.Enqueue(nodoVisitado);
-            
-            // Si superamos el tamaño de la memoria, olvidamos el más viejo
-            if (historialNodos.Count > capacidadMemoria)
-            {
-                historialNodos.Dequeue();
-            }
+        }
+
+        if (historialNodos.Count > capacidadMemoria)
+        {
+            historialNodos.Dequeue();
         }
     }
 
     IEnumerator SeguirCamino()
     {
-        estaMoviendose = true;
-
         while (currentPath != null && currentPath.Count > 0)
         {
             Node n = currentPath[0];
 
+            // Alineamos la altura para evitar desvíos en el eje Y
             transform.position = new Vector3(transform.position.x, n.worldPosition.y, transform.position.z);
 
-            while (Vector3.Distance(transform.position, n.worldPosition) > 0.05f)
+            // Bucle que asegura que el personaje REALMENTE llegue al centro del cuadro físico
+            while (Vector3.Distance(new Vector3(transform.position.x, n.worldPosition.y, transform.position.z), n.worldPosition) > 0.08f)
             {
                 Vector3 posprofePlana = new Vector3(transform.position.x, n.worldPosition.y, transform.position.z);
                 Vector3 posNodoPlana = new Vector3(n.worldPosition.x, n.worldPosition.y, n.worldPosition.z);
@@ -114,7 +125,7 @@ public class profe : MonoBehaviour
                     movimientoPaso = distanciaAlObjetivo;
                 }
 
-                // Sistema de Matrices 4D
+                // Tu sistema de transformación 4D
                 Vector4 currentPos = new Vector4(transform.position.x, transform.position.y, transform.position.z, 1f);
                 Matrix4x4 T = Transformations.TranslateM(dir.x * movimientoPaso, 0f, dir.z * movimientoPaso);
                 Vector4 newPos = T * currentPos;
@@ -124,13 +135,19 @@ public class profe : MonoBehaviour
                 yield return null; 
             }
 
+            // CORRECCIÓN HISTÓRICA: Ahora que garantizamos que llegó, guardamos el nodo que dejamos atrás
+            ActualizarHistorialMemoria(currentNode);
+
+            // Actualizamos formalmente nuestra posición actual con el nodo que acabamos de pisar
             currentNode = n;
+
             if (currentPath.Count > 0)
             {
                 currentPath.RemoveAt(0);
             }
         }
 
-        estaMoviendose = false;
+        // Liberamos el estado de movimiento para permitir que el Update vuelva a buscar a la moneda
+        corrutinaMovimiento = null;
     }
 }

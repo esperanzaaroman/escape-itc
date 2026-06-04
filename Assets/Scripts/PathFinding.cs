@@ -5,88 +5,115 @@ public class PathFinding
 {
     public GridManager gridManager;
 
-    int GetDistance(Node a, Node b)
+    private int GetDistance(Node a, Node b)
     {
-        return Mathf.Abs(a.x-b.x)+ Mathf.Abs(a.y-b.y); //Distancia Manhattan uwu
+        return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
     }
 
-    public List<Node> RetracePath(Node inicio,Node fin)
+    private void ResetGridNodes()
     {
-        List<Node> path =
-            new List<Node>(); //crea path vacio
+        if (gridManager == null || gridManager.grid == null) return;
 
-        Node current = fin; //saca el destinichis
+        int lines = gridManager.grid.GetLength(0);
+        int cols = gridManager.grid.GetLength(1);
 
-        while (current != inicio) //como la clase nodo guarda el papa como el nodo anterior hay que recorrer al reves
+        for (int x = 0; x < lines; x++)
+        {
+            for (int y = 0; y < cols; y++)
+            {
+                Node n = gridManager.grid[x, y];
+                if (n != null)
+                {
+                    n.gCost = int.MaxValue; 
+                    n.hCost = 0;
+                    n.Parent = null;
+                }
+            }
+        }
+    }
+
+    public List<Node> RetracePath(Node inicio, Node fin)
+    {
+        List<Node> path = new List<Node>();
+        Node current = fin;
+
+        int safetyCounter = 0;
+        int maxNodes = gridManager.grid.GetLength(0) * gridManager.grid.GetLength(1);
+
+        while (current != inicio && current != null)
         {
             path.Add(current);
             current = current.Parent;
-        }
-        path.Reverse(); //saca el path ya bien de inicio-fin
 
-        foreach(Node n in path)
-        {
-            Debug.Log($"{n.x},{n.y}"); //xd
+            safetyCounter++;
+            if (safetyCounter > maxNodes)
+            {
+                Debug.LogError("[A*] Bucle infinito detectado en RetracePath.");
+                return new List<Node>();
+            }
         }
+
+        path.Reverse();
         return path;
     }
+
     public List<Node> FindPath(Node startNode, Node targetNode, Queue<Node> historialProfe)
     {
-        if (startNode == null || targetNode == null) 
-        return new List<Node>();
+        if (startNode == null || targetNode == null || gridManager == null) 
+            return new List<Node>();
 
-        List<Node> openSet = //lista de nodos a explorar (las hojitas del grafo) los vecinos cercanos vaya
-            new List<Node>();
-        
-        HashSet<Node> closedSet = //los q ya exploramos, para que ho se vaya a ciclar (es un hash set para que excluya los duplicados y la busqueda sea O(1))
-            new HashSet<Node>();
+        ResetGridNodes();
 
-        openSet.Add(startNode); //empieza con el start
+        List<Node> openSet = new List<Node>();
+        HashSet<Node> closedSet = new HashSet<Node>();
 
-        while(openSet.Count > 0) //mientras no este vacia (haya nodos por explorar)
+        startNode.gCost = 0;
+        startNode.hCost = GetDistance(startNode, targetNode);
+        openSet.Add(startNode);
+
+        while (openSet.Count > 0)
         {
-            Node currentNode=openSet[0]; //saca el primer nodo del open set, creo que esta mas facil no usar un ordered porque hay que ponerle la key para q se ordene y comnfunde 
-
-            foreach(Node nodo in openSet) //checa para agarra el node con el costo mas bajito cute
+            Node currentNode = openSet[0];
+            for (int i = 1; i < openSet.Count; i++)
             {
-                if(nodo.FCost<currentNode.FCost)
-                    currentNode=nodo;
-            }
-
-            openSet.Remove(currentNode); //borra el nodo elegido de open
-
-            closedSet.Add(currentNode); //lo pone el closed
-
-            if (currentNode == targetNode)
-            {
-                return RetracePath(startNode, targetNode); 
-            }
-            foreach(Node vecino in 
-                gridManager.GetNeighbours(currentNode) //saca sus vecinichos (visiten la funcion en grid manager)
-            )
-            {
-                if(!vecino.walkable||closedSet.Contains(vecino)|| (historialProfe != null && historialProfe.Contains(vecino))) // checa si no es pared (walkable) o si ya lo visitamos 
-                    continue; //si pasa el if se salta al sig vecino (no reviso si ya llegue al mejor de los closed porque manhattan es padre y eso no ocurre (en teoria))
-
-                int nuevoCosto = currentNode.gCost+GetDistance(currentNode,vecino); //crea el costo con dist manhattan
-
-                if(nuevoCosto<vecino.gCost
-                    || !openSet.Contains(vecino) // si el costo de llegar al vecino es mas chiquito que el que ya tenia (osea soy mas pro esta vez) o si no esta en open set y no me importa el costo xd
-                )
+                if (openSet[i].FCost < currentNode.FCost || 
+                   (openSet[i].FCost == currentNode.FCost && openSet[i].hCost < currentNode.hCost))
                 {
-                    vecino.gCost=nuevoCosto; //le doy el costo de llegar hasta el vecino el mas chiquito que el que tenia uwu
-
-                    vecino.hCost=GetDistance(vecino,targetNode); //saca euristica (mahattan)
-
-                    vecino.Parent=currentNode; //mi papa es el vecino por donde llegue jeje
-
-                    if(!openSet.Contains(vecino)) //si no estan en open lo pongo (esto es por si econtre una ruta mejor y ya lo habia explorado xd)
-                        openSet.Add(vecino);
+                    currentNode = openSet[i];
                 }
             }
 
+            openSet.Remove(currentNode);
+            closedSet.Add(currentNode);
 
+            if (currentNode == targetNode)
+            {
+                return RetracePath(startNode, targetNode);
+            }
+
+            foreach (Node vecino in gridManager.GetNeighbours(currentNode))
+            {
+                if (!vecino.walkable || closedSet.Contains(vecino) || (historialProfe != null && historialProfe.Contains(vecino)))
+                {
+                    continue;
+                }
+
+                int nuevoCostoALVecino = currentNode.gCost + GetDistance(currentNode, vecino);
+
+                if (nuevoCostoALVecino < vecino.gCost || !openSet.Contains(vecino))
+                {
+                    vecino.gCost = nuevoCostoALVecino;
+                    vecino.hCost = GetDistance(vecino, targetNode);
+                    vecino.Parent = currentNode;
+
+                    if (!openSet.Contains(vecino))
+                    {
+                        openSet.Add(vecino);
+                    }
+                }
+            }
         }
-        return new List<Node>();
+
+        return new List<Node>(); 
     }
 }
