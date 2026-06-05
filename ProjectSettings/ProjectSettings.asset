@@ -763,11 +763,11 @@ PlayerSettings:
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
   enableDirectStorage: 0
-  cloudProjectId: 1ce6c19e-5db2-4b1c-a2a4-715ebd23ee87
+  cloudProjectId: 3152edc9-26e6-40ad-80e5-11fd236d2eab
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: escapeee
-  organizationId: a01739472
+  projectName: EscapeITC
+  organizationId: calamarines
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}

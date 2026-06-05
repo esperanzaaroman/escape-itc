@@ -1,0 +1,23 @@
+{
+  "asset": "54d2179639de5bf43a5857665edd1dd3",
+  "fileName": "019e95e3-d968-7f2f-83e5-71daae6625c5.fbx",
+  "prompt": "Create a game-ready 3D female character matching the reference image as closely as possible. Adult woman, 1.57m tall, medium build, light-medium skin tone, large brown eyes, friendly face, dark brown/black hair tied in a low ponytail, small hoop earrings. Outfit: bright pink long-sleeve button-up blouse, tailored gray dress pants, black flat shoes. Semi-realistic stylized art style, clean topology, optimized for Unity. Full body character with PBR materials, clean UVs, separate materials for skin, hair, clothes and shoes. Humanoid rig compatible with Unity Mecanim, T-pose, proper weight painting, ready for idle, walk, run and interaction animations. Professional office-worker appearance, neutral friendly expression. Mid-poly asset for real-time gameplay. No background, character only. Keep colors, clothing, hairstyle and facial appearance consistent with the reference.",
+  "negativePrompt": "",
+  "model": "model3d-tripo-p1",
+  "modelName": "Tripo P1",
+  "customSeed": -1,
+  "w3CTraceId": "",
+  "feedback": 1,
+  "refinementMode": "Generation",
+  "promptImageReferenceGuid": "f39eebf83cde5eb4d919e241a70345a2",
+  "modelReferenceGuid": "",
+  "multiviewFrontGuid": "",
+  "multiviewBackGuid": "",
+  "multiviewLeftGuid": "",
+  "multiviewRightGuid": "",
+  "multiviewTopGuid": "",
+  "multiviewBottomGuid": "",
+  "multiviewLeftFrontGuid": "",
+  "multiviewRightFrontGuid": "",
+  "faceLimit": -1
+}

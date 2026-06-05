@@ -1,0 +1,23 @@
+{
+    "asset": "3f8475149b52df74d8d674a1d7b46ac5",
+    "fileName": "019e95fa-4998-76d6-990e-762eefe20780.fbx",
+    "prompt": "Create a full-body stylized 3D character, male adult, height 1.70m, standing in a neutral A-pose. Cartoon-realistic style with clean topology and game-ready proportions. Slightly stocky build, average shoulders, short neck, rounded face, light-medium skin tone. Short gray hair neatly combed to the side, subtle volume on top, dark eyebrows, round black-framed glasses, brown eyes, neutral and calm expression. Slightly oversized head compared to the body, similar to modern 3D animated characters. Outfit: mustard yellow polo shirt with small repeating geometric pattern, folded collar, short sleeves, beige straight-leg dress pants, black casual sneakers. Detailed fabric folds, realistic stitching, PBR materials, soft skin shading, realistic glasses materials. Front-facing, symmetrical body proportions, clean hands, realistic feet, neutral gray studio background, high-quality textures, optimized mesh for Unity, rig-ready, no accessories other than glasses.",
+    "negativePrompt": "",
+    "model": "model3d-tripo-p1",
+    "modelName": "Tripo P1",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "promptImageReferenceGuid": "5dd982313cb141645ba86acc4670a291",
+    "modelReferenceGuid": "",
+    "multiviewFrontGuid": "",
+    "multiviewBackGuid": "",
+    "multiviewLeftGuid": "",
+    "multiviewRightGuid": "",
+    "multiviewTopGuid": "",
+    "multiviewBottomGuid": "",
+    "multiviewLeftFrontGuid": "",
+    "multiviewRightFrontGuid": "",
+    "faceLimit": -1
+}

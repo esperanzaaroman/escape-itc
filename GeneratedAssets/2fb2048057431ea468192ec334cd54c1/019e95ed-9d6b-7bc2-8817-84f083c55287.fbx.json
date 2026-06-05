@@ -1,0 +1,23 @@
+{
+    "asset": "2fb2048057431ea468192ec334cd54c1",
+    "fileName": "019e95ed-9d6b-7bc2-8817-84f083c55287.fbx",
+    "prompt": "Create a full-body stylized 3D character, male adult, height 1.70m, standing in a neutral A-pose. Cartoon-realistic style similar to modern game mascots and high-quality 3D avatars. Medium build, slightly broad shoulders, friendly face, warm smile, large expressive brown eyes, thick dark eyebrows, short spiky dark hair with subtle gray on the sides, light-medium skin tone. Outfit: dark gray zip-up hoodie (open), gray t-shirt with white “Microsoft” text centered on the chest, blue straight-fit jeans, dark burgundy leather lace-up boots. Preserve the proportions shown in the reference: slightly oversized head, realistic hands and feet, clean topology, PBR materials, detailed fabric folds, realistic stitching on jeans, subtle skin shading. Front-facing, symmetrical, game-ready, optimized mesh, high-quality textures, neutral gray studio lighting, no accessories, no beard, no glasses.",
+    "negativePrompt": "",
+    "model": "model3d-tripo-p1",
+    "modelName": "Tripo P1",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "promptImageReferenceGuid": "f62c967c5e47b9144b3a5739487c0baa",
+    "modelReferenceGuid": "",
+    "multiviewFrontGuid": "",
+    "multiviewBackGuid": "",
+    "multiviewLeftGuid": "",
+    "multiviewRightGuid": "",
+    "multiviewTopGuid": "",
+    "multiviewBottomGuid": "",
+    "multiviewLeftFrontGuid": "",
+    "multiviewRightFrontGuid": "",
+    "faceLimit": -1
+}
