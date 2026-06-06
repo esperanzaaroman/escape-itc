@@ -1,160 +1,151 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+
 public class coin : MonoBehaviour
-{   
+{
+    [Header("Movimiento")]
     public float speed = 20f;
     public GridManager gridManager;
+
     private Node currentNode;
     private Node targetNode;
+    private bool _initialized = false;
 
     private Queue<Node> historialNodos = new Queue<Node>();
-    public int capacidadMemoria = 6; // Cuántos nodos hacia atrás recordará
-    public Node getCurrentNode(){
-        return currentNode;
-    }  
-    void ChooseRandomNode()
-    {
-        List<Node> vecinos = gridManager.GetNeighbours(currentNode);
-        vecinos.RemoveAll(n => !n.walkable);
+    public int capacidadMemoria = 6;
 
-        if (vecinos.Count == 0) return;
+    // ── Evento que CoinManager escucha ────────────────────────────────────────
+    public static event System.Action<coin> OnCoinCollected;
+    private bool _collected = false;
 
-        // Filtramos los vecinos: eliminamos a cualquiera que esté en nuestra memoria
-        List<Node> vecinosPermitidos = new List<Node>();
-        foreach (Node v in vecinos)
-        {
-            if (!historialNodos.Contains(v))
-            {
-                vecinosPermitidos.Add(v);
-            }
-        }
+    // ── API que usa profe.cs ──────────────────────────────────────────────────
+    public Node getCurrentNode() => currentNode;
 
-        // Si hay opciones que no hemos visitado recientemente, elegimos una de ellas
-        if (vecinosPermitidos.Count > 0)
-        {
-            targetNode = vecinosPermitidos[Random.Range(0, vecinosPermitidos.Count)];
-        }
-        else
-        {
-            // Si todos los vecinos ya fueron visitados (ej. un callejón o circuito cerrado),
-            // no nos trabamos, simplemente elegimos el que tenga menos restricciones
-            targetNode = vecinos[Random.Range(0, vecinos.Count)];
-        }
-    }
+    // ─────────────────────────────────────────────────────────────────────────
     void Start()
     {
         StartCoroutine(IniciarConRetraso());
     }
+
     IEnumerator IniciarConRetraso()
     {
         yield return null;
+
         if (gridManager == null)
-    {
-        Debug.LogError("gridManager es NULL — asígnalo en el Inspector");
-        yield break;
-    }
+        {
+            Debug.LogError("[coin] gridManager es NULL — asígnalo en el Inspector");
+            yield break;
+        }
+        if (gridManager.grid == null)
+        {
+            Debug.LogError("[coin] gridManager.grid es NULL — Awake no corrió todavía");
+            yield break;
+        }
 
-    // ¿El grid se creó?
-    if (gridManager.grid == null)
-    {
-        Debug.LogError("gridManager.grid es NULL — Awake no corrió todavía");
-        yield break;
-    }
-
-    Debug.Log("Grid size: " + gridManager.grid.GetLength(0) + " x " + gridManager.grid.GetLength(1));
-        currentNode =
-            gridManager.NodeFromWorldPoint(
-                transform.position
-            );
+        currentNode = gridManager.NodeFromWorldPoint(transform.position);
         if (currentNode == null)
         {
-            Debug.LogError("currentNode es NULL — posición fuera del grid: " + transform.position);
+            Debug.LogError("[coin] currentNode es NULL — posición fuera del grid: " + transform.position);
             yield break;
         }
-         Debug.Log("currentNode: " + currentNode.worldPosition + " | walkable: " + currentNode.walkable);
 
-        List<Node> vecinos = gridManager.GetNeighbours(currentNode);
-        Debug.Log("Vecinos encontrados: " + vecinos.Count);
-        foreach (Node n in vecinos)
-        {
-            Debug.Log("  Vecino en " + n.worldPosition + " | walkable: " + n.walkable);
-        }
+        _initialized = true;
         ElegirNuevoDestino();
-        
-        if (targetNode == null)
-        {
-            Debug.LogWarning("Ningún vecino es walkable");
-            yield break;
-        }
-
-        // Si pasa de aquí, es seguro usarlo
-        Debug.Log("Caminando hacia: " + targetNode.worldPosition);
     }
+
+    // ── Lógica de navegación aleatoria ────────────────────────────────────────
+    void ChooseRandomNode()
+    {
+        List<Node> vecinos = gridManager.GetNeighbours(currentNode);
+        vecinos.RemoveAll(n => !n.walkable);
+        if (vecinos.Count == 0) return;
+
+        List<Node> permitidos = new List<Node>();
+        foreach (Node v in vecinos)
+            if (!historialNodos.Contains(v))
+                permitidos.Add(v);
+
+        targetNode = (permitidos.Count > 0)
+            ? permitidos[Random.Range(0, permitidos.Count)]
+            : vecinos[Random.Range(0, vecinos.Count)];
+    }
+
     void ElegirNuevoDestino()
     {
         if (!historialNodos.Contains(currentNode))
         {
             historialNodos.Enqueue(currentNode);
-            // Si superamos el tamaño de la memoria, olvidamos el más viejo
             if (historialNodos.Count > capacidadMemoria)
-            {
                 historialNodos.Dequeue();
-            }
         }
-
         ChooseRandomNode();
     }
+
+    // ── Movimiento (BUG CORREGIDO: ya no fuerza Y al nodo) ───────────────────
     void Update()
     {
-        
-        if(targetNode == null)
-            return;
-        transform.position = new Vector3(
-            transform.position.x,
-            targetNode.worldPosition.y,
-            transform.position.z
+        if (!_initialized || targetNode == null) return;
+
+        // Destino en XZ, conservando la Y propia del objeto
+        Vector3 destino = new Vector3(
+            targetNode.worldPosition.x,
+            transform.position.y,
+            targetNode.worldPosition.z
         );
-        Vector3 posMonedaPlana = new Vector3(transform.position.x, targetNode.worldPosition.y, transform.position.z);
-        float distanciaAlObjetivo = Vector3.Distance(posMonedaPlana, targetNode.worldPosition);
-        if (distanciaAlObjetivo < 0.1f)
+
+        float distancia = Vector3.Distance(
+            new Vector3(transform.position.x, 0f, transform.position.z),
+            new Vector3(destino.x,            0f, destino.z)
+        );
+
+        if (distancia < 0.05f)
         {
+            // Snap exacto al centro del nodo en XZ
+            transform.position = new Vector3(
+                targetNode.worldPosition.x,
+                transform.position.y,
+                targetNode.worldPosition.z
+            );
             currentNode = targetNode;
             ElegirNuevoDestino();
-            return; 
+            return;
         }
-        Vector3 dir = (targetNode.worldPosition - posMonedaPlana).normalized;
 
-        float movimientoPaso = speed * Time.deltaTime;
-        if (movimientoPaso > distanciaAlObjetivo)
-        {
-            movimientoPaso = distanciaAlObjetivo; // No te pases del nodo
-        }
-        Vector4 currentPos = new Vector4(
-            transform.position.x,
-            transform.position.y,
-            transform.position.z,
-            1f
-        );
+        Vector3 dir = (destino - transform.position);
+        dir.y = 0f;
+        dir.Normalize();
 
-        
-        
-        Matrix4x4 T =
-            Transformations.TranslateM(
-                dir.x * movimientoPaso,
-                0f,
-                dir.z * movimientoPaso
-            );
+        float paso = Mathf.Min(speed * Time.deltaTime, distancia); // Anti-overshoot
 
-        Vector4 newPos = T * currentPos;
+        Vector4 pos = new Vector4(transform.position.x, transform.position.y, transform.position.z, 1f);
+        Matrix4x4 T = Transformations.TranslateM(dir.x * paso, 0f, dir.z * paso);
+        Vector4 newPos = T * pos;
 
-        transform.position =
-            new Vector3(
-                newPos.x,
-                newPos.y,
-                newPos.z
-            ); 
-
-    
+        transform.position = new Vector3(newPos.x, newPos.y, newPos.z);
     }
+
+    // ── Recolección por trigger (jugador con tag "Player") ────────────────────
+    void OnTriggerEnter(Collider other)
+    {
+        if (_collected) return;
+        if (other.CompareTag("Player"))
+            Collect();
+    }
+
+    // ── Recolección por nodo (llamada desde Player.cs cuando comparte nodo) ───
+    public void CollectFromNode()
+    {
+        if (!_collected) Collect();
+    }
+
+    private void Collect()
+    {
+        _collected = true;
+        OnCoinCollected?.Invoke(this);
+        gameObject.SetActive(false);
+        Destroy(gameObject, 0.05f);
+    }
+
+    public bool IsCollected => _collected;
 }

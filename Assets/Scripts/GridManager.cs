@@ -19,7 +19,7 @@ public class GridManager : MonoBehaviour
         InicializarGrid();
     }
 
-    // Centralizamos la inicialización para poder usarla en Awake o en Gizmos
+    // Centralizamos la inicialización 
     void InicializarGrid()
     {
         nodeDiameter = nodeRadius * 2;
@@ -75,16 +75,14 @@ public class GridManager : MonoBehaviour
     {
         grid = new Node[gridSizeX, gridSizeY];
 
-        // Se resta exactamente la mitad del mundo para centrar el grid en el pivote del objeto.
-        // No se modifica la Y para que el CheckSphere quede alineado con la altura del laberinto.
+        // No se modifica la Y para que no tenga que poner a todos flotando al principio lol
         Vector3 worldBottomLeft = new Vector3(
             transform.position.x - gridWorldSize.x / 2f,
             transform.position.y,
             transform.position.z - gridWorldSize.y / 2f
         );
 
-        // Radio de detección ligeramente menor que nodeRadius para no marcar
-        // como muro nodos que apenas rozan la geometría en esquinas.
+        // Radio de detección ligeramente menor que nodeRadius para no marcar como muro nodos que apenas rozan la geometría en esquinas.
         float checkRadius = nodeRadius * 0.85f;
 
         for (int x = 0; x < gridSizeX; x++)

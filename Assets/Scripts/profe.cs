@@ -102,7 +102,7 @@ public class profe : MonoBehaviour
         {
             Node n = currentPath[0];
 
-            // Destino plano (ignoramos Y para no hundir/elevar al profe)
+            // ignoramos Y para no hundir/elevar al profe
             Vector3 destino = new Vector3(n.worldPosition.x, transform.position.y, n.worldPosition.z);
 
             // Nos acercamos hasta estar dentro del umbral de llegada
