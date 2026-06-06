@@ -15,7 +15,6 @@ public class profe : MonoBehaviour
 
     private Coroutine corrutinaMovimiento;
 
-    // Memoria usando únicamente la cola tradicional
     private Queue<Node> historialNodos = new Queue<Node>();
     public int capacidadMemoria = 5; 
 
@@ -50,8 +49,7 @@ public class profe : MonoBehaviour
 
         cronometro += Time.deltaTime;
 
-        // CORRECCIÓN CRÍTICA: Solo permitimos recalcular si se cumplió el tiempo 
-        // Y ADEMÁS el Profe no está en medio de un movimiento intermedio entre nodos.
+        // Cambiamos el rumbo únicamente cuando se cumpla el tiempo y la corrutina actual termine
         if (cronometro >= tiempoEntreRecalculos && corrutinaMovimiento == null)
         {
             Node nodoMoneda = objetivo.getCurrentNode();
@@ -60,17 +58,14 @@ public class profe : MonoBehaviour
             {
                 targetNode = nodoMoneda;
                 
-                // Obtenemos nuestra posición real exacta en la cuadrícula antes de recalcular
                 Node nodoActualReal = gridManager.NodeFromWorldPoint(transform.position);
                 if (nodoActualReal != null)
                 {
                     currentNode = nodoActualReal;
                 }
 
-                // Solicitamos la ruta pasando la cola directamente
                 currentPath = PathFinding.FindPath(currentNode, targetNode, historialNodos);
 
-                // Amnesia de emergencia si la memoria bloqueó todos los accesos posibles
                 if ((currentPath == null || currentPath.Count == 0) && currentNode != targetNode)
                 {
                     currentPath = PathFinding.FindPath(currentNode, targetNode, null);
@@ -107,38 +102,40 @@ public class profe : MonoBehaviour
         {
             Node n = currentPath[0];
 
-            // Alineamos la altura para evitar desvíos en el eje Y
-            transform.position = new Vector3(transform.position.x, n.worldPosition.y, transform.position.z);
+            // Destino plano (ignoramos Y para no hundir/elevar al profe)
+            Vector3 destino = new Vector3(n.worldPosition.x, transform.position.y, n.worldPosition.z);
 
-            // Bucle que asegura que el personaje REALMENTE llegue al centro del cuadro físico
-            while (Vector3.Distance(new Vector3(transform.position.x, n.worldPosition.y, transform.position.z), n.worldPosition) > 0.08f)
+            // Nos acercamos hasta estar dentro del umbral de llegada
+            while (true)
             {
-                Vector3 posprofePlana = new Vector3(transform.position.x, n.worldPosition.y, transform.position.z);
-                Vector3 posNodoPlana = new Vector3(n.worldPosition.x, n.worldPosition.y, n.worldPosition.z);
+                Vector3 posActual = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+                float distancia = Vector3.Distance(
+                    new Vector3(posActual.x, 0f, posActual.z),
+                    new Vector3(destino.x,   0f, destino.z)
+                );
 
-                float distanciaAlObjetivo = Vector3.Distance(posprofePlana, posNodoPlana);
-                Vector3 dir = (posNodoPlana - posprofePlana).normalized;
+                if (distancia <= 0.05f) break;
 
-                float movimientoPaso = speed * Time.deltaTime;
-                if (movimientoPaso > distanciaAlObjetivo)
-                {
-                    movimientoPaso = distanciaAlObjetivo;
-                }
+                Vector3 dir = (destino - posActual);
+                dir.y = 0f;
+                dir.Normalize();
 
-                // Tu sistema de transformación 4D
+                float paso = speed * Time.deltaTime;
+                if (paso > distancia) paso = distancia; // Anti-overshoot
+
                 Vector4 currentPos = new Vector4(transform.position.x, transform.position.y, transform.position.z, 1f);
-                Matrix4x4 T = Transformations.TranslateM(dir.x * movimientoPaso, 0f, dir.z * movimientoPaso);
+                Matrix4x4 T = Transformations.TranslateM(dir.x * paso, 0f, dir.z * paso);
                 Vector4 newPos = T * currentPos;
 
                 transform.position = new Vector3(newPos.x, newPos.y, newPos.z);
 
-                yield return null; 
+                yield return null;
             }
 
-            // CORRECCIÓN HISTÓRICA: Ahora que garantizamos que llegó, guardamos el nodo que dejamos atrás
-            ActualizarHistorialMemoria(currentNode);
+            // Alineación exacta en XZ al centro del nodo; conservamos la Y del profe
+            transform.position = new Vector3(n.worldPosition.x, transform.position.y, n.worldPosition.z);
 
-            // Actualizamos formalmente nuestra posición actual con el nodo que acabamos de pisar
+            ActualizarHistorialMemoria(currentNode);
             currentNode = n;
 
             if (currentPath.Count > 0)
@@ -146,8 +143,6 @@ public class profe : MonoBehaviour
                 currentPath.RemoveAt(0);
             }
         }
-
-        // Liberamos el estado de movimiento para permitir que el Update vuelva a buscar a la moneda
         corrutinaMovimiento = null;
     }
 }
