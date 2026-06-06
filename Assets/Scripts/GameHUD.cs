@@ -14,15 +14,8 @@ public class GameHUD : MonoBehaviour
     private float _tiempoTranscurrido = 0f;
     private bool  _corriendo          = true;
 
-    void OnEnable()
-    {
-        CoinManager.OnAllCoinsCollected += DetenerTiempo;
-    }
-
-    void OnDisable()
-    {
-        CoinManager.OnAllCoinsCollected -= DetenerTiempo;
-    }
+    void OnEnable()  => CoinManager.OnAllCoinsCollected += DetenerTiempo;
+    void OnDisable() => CoinManager.OnAllCoinsCollected -= DetenerTiempo;
 
     void Start()
     {
@@ -46,6 +39,9 @@ public class GameHUD : MonoBehaviour
         if (txtMonedas != null)
             txtMonedas.text = $"Monedas: {recogidas} / {total}";
     }
+
+    // GameManager usa esto para mostrar el tiempo final en pantalla de victoria
+    public string GetTiempoFormateado() => FormatearTiempo(_tiempoTranscurrido);
 
     private void DetenerTiempo() => _corriendo = false;
 
