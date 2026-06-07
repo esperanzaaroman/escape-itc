@@ -8,25 +8,41 @@ public class profe : MonoBehaviour
     public float speed = 10f;
     public GridManager gridManager;
     public PathFinding PathFinding;
-    
+
     private Node currentNode;
     private Node targetNode;
     private List<Node> currentPath = new List<Node>();
-
     private Coroutine corrutinaMovimiento;
 
     private Queue<Node> historialNodos = new Queue<Node>();
-    public int capacidadMemoria = 5; 
+    public int capacidadMemoria = 5;
 
     [Header("Configuración de Optimización")]
-    public float tiempoEntreRecalculos = 0.5f; 
-    private float cronometro = 0f; 
+    public float tiempoEntreRecalculos = 0.5f;
+    private float cronometro = 0f;
 
+    [Header("Profundidad de búsqueda A*")]
+    [Tooltip("Máximo de nodos que el A* expande por búsqueda.\n" +
+             "5  = muy limitado, comportamiento casi aleatorio.\n" +
+             "20 = equilibrio recomendado.\n" +
+             "-1 = sin límite (búsqueda completa).")]
+    public int profundidadBusqueda = 20;
+
+    [Header("Detección de captura")]
+    public float radioCaptura = 1.5f;
+    private GameManager _gameManager;
+    private CharacterMovement _player;
+    private bool _juegoTerminado = false;
+
+    // ─────────────────────────────────────────────────────────────────────────
     void Start()
-    {   
+    {
         PathFinding = new PathFinding();
         PathFinding.gridManager = this.gridManager;
-        
+
+        _gameManager = FindObjectOfType<GameManager>();
+        _player      = FindObjectOfType<CharacterMovement>();
+
         StartCoroutine(IniciarConRetraso());
     }
 
@@ -45,11 +61,28 @@ public class profe : MonoBehaviour
 
     void Update()
     {
+        if (_juegoTerminado) return;
         if (gridManager == null || gridManager.grid == null || objetivo == null) return;
 
+        // ── Detección de captura por distancia 
+        if (_player != null)
+        {
+            float dist = Vector3.Distance(
+                new Vector3(transform.position.x, 0f, transform.position.z),
+                new Vector3(_player.transform.position.x, 0f, _player.transform.position.z)
+            );
+
+            if (dist <= radioCaptura)
+            {
+                _juegoTerminado = true;
+                _gameManager?.MostrarDerrota();
+                return;
+            }
+        }
+
+        // ── Pathfinding hacia la moneda
         cronometro += Time.deltaTime;
 
-        // Cambiamos el rumbo únicamente cuando se cumpla el tiempo y la corrutina actual termine
         if (cronometro >= tiempoEntreRecalculos && corrutinaMovimiento == null)
         {
             Node nodoMoneda = objetivo.getCurrentNode();
@@ -57,24 +90,22 @@ public class profe : MonoBehaviour
             if (nodoMoneda != null && nodoMoneda != targetNode)
             {
                 targetNode = nodoMoneda;
-                
+
                 Node nodoActualReal = gridManager.NodeFromWorldPoint(transform.position);
                 if (nodoActualReal != null)
-                {
                     currentNode = nodoActualReal;
-                }
 
-                currentPath = PathFinding.FindPath(currentNode, targetNode, historialNodos);
+                // Búsqueda con profundidad limitada
+                currentPath = PathFinding.FindPath(currentNode, targetNode,
+                                                   historialNodos, profundidadBusqueda);
 
+                // Si no encontró nada con historial, reintenta sin restricción de memoria
                 if ((currentPath == null || currentPath.Count == 0) && currentNode != targetNode)
-                {
-                    currentPath = PathFinding.FindPath(currentNode, targetNode, null);
-                }
+                    currentPath = PathFinding.FindPath(currentNode, targetNode,
+                                                       null, profundidadBusqueda);
 
                 if (currentPath != null && currentPath.Count > 0)
-                {
                     corrutinaMovimiento = StartCoroutine(SeguirCamino());
-                }
             }
 
             cronometro = 0f;
@@ -84,16 +115,10 @@ public class profe : MonoBehaviour
     void ActualizarHistorialMemoria(Node nodoVisitado)
     {
         if (nodoVisitado == null) return;
-
         if (!historialNodos.Contains(nodoVisitado))
-        {
             historialNodos.Enqueue(nodoVisitado);
-        }
-
         if (historialNodos.Count > capacidadMemoria)
-        {
             historialNodos.Dequeue();
-        }
     }
 
     IEnumerator SeguirCamino()
@@ -101,48 +126,36 @@ public class profe : MonoBehaviour
         while (currentPath != null && currentPath.Count > 0)
         {
             Node n = currentPath[0];
-
-            // ignoramos Y para no hundir/elevar al profe
             Vector3 destino = new Vector3(n.worldPosition.x, transform.position.y, n.worldPosition.z);
 
-            // Nos acercamos hasta estar dentro del umbral de llegada
             while (true)
             {
-                Vector3 posActual = new Vector3(transform.position.x, transform.position.y, transform.position.z);
                 float distancia = Vector3.Distance(
-                    new Vector3(posActual.x, 0f, posActual.z),
-                    new Vector3(destino.x,   0f, destino.z)
+                    new Vector3(transform.position.x, 0f, transform.position.z),
+                    new Vector3(destino.x,            0f, destino.z)
                 );
-
                 if (distancia <= 0.05f) break;
 
-                Vector3 dir = (destino - posActual);
+                Vector3 dir = (destino - transform.position);
                 dir.y = 0f;
                 dir.Normalize();
 
-                float paso = speed * Time.deltaTime;
-                if (paso > distancia) paso = distancia; // Anti-overshoot
+                float paso = Mathf.Min(speed * Time.deltaTime, distancia);
 
-                Vector4 currentPos = new Vector4(transform.position.x, transform.position.y, transform.position.z, 1f);
-                Matrix4x4 T = Transformations.TranslateM(dir.x * paso, 0f, dir.z * paso);
-                Vector4 newPos = T * currentPos;
-
+                Vector4 pos    = new Vector4(transform.position.x, transform.position.y, transform.position.z, 1f);
+                Matrix4x4 T    = Transformations.TranslateM(dir.x * paso, 0f, dir.z * paso);
+                Vector4 newPos = T * pos;
                 transform.position = new Vector3(newPos.x, newPos.y, newPos.z);
 
                 yield return null;
             }
 
-            // Alineación exacta en XZ al centro del nodo; conservamos la Y del profe
             transform.position = new Vector3(n.worldPosition.x, transform.position.y, n.worldPosition.z);
-
             ActualizarHistorialMemoria(currentNode);
             currentNode = n;
-
-            if (currentPath.Count > 0)
-            {
-                currentPath.RemoveAt(0);
-            }
+            currentPath.RemoveAt(0);
         }
+
         corrutinaMovimiento = null;
     }
 }

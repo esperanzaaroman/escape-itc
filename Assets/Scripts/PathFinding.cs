@@ -15,21 +15,14 @@ public class PathFinding
         if (gridManager == null || gridManager.grid == null) return;
 
         int lines = gridManager.grid.GetLength(0);
-        int cols = gridManager.grid.GetLength(1);
+        int cols  = gridManager.grid.GetLength(1);
 
         for (int x = 0; x < lines; x++)
-        {
             for (int y = 0; y < cols; y++)
             {
                 Node n = gridManager.grid[x, y];
-                if (n != null)
-                {
-                    n.gCost = int.MaxValue; 
-                    n.hCost = 0;
-                    n.Parent = null;
-                }
+                if (n != null) { n.gCost = int.MaxValue; n.hCost = 0; n.Parent = null; }
             }
-        }
     }
 
     public List<Node> RetracePath(Node inicio, Node fin)
@@ -45,8 +38,7 @@ public class PathFinding
             path.Add(current);
             current = current.Parent;
 
-            safetyCounter++;
-            if (safetyCounter > maxNodes)
+            if (++safetyCounter > maxNodes)
             {
                 Debug.LogError("[A*] Bucle infinito detectado en RetracePath.");
                 return new List<Node>();
@@ -57,63 +49,76 @@ public class PathFinding
         return path;
     }
 
-    public List<Node> FindPath(Node startNode, Node targetNode, Queue<Node> historialProfe)
+    /// <param name="profundidadMax">
+    /// Cuántas iteraciones hace el for antes de detenerse
+    /// </param>
+    public List<Node> FindPath(Node startNode, Node targetNode, Queue<Node> historialProfe, int profundidadMax = -1)
     {
-        if (startNode == null || targetNode == null || gridManager == null) 
+        if (startNode == null || targetNode == null || gridManager == null)
             return new List<Node>();
 
         ResetGridNodes();
 
-        List<Node> openSet = new List<Node>();
+        List<Node> openSet      = new List<Node>();
         HashSet<Node> closedSet = new HashSet<Node>();
 
         startNode.gCost = 0;
         startNode.hCost = GetDistance(startNode, targetNode);
         openSet.Add(startNode);
 
-        while (openSet.Count > 0)
+        // Límite de iteraciones: si profundidadMax es -1 usamos int.MaxValue
+        int limite = (profundidadMax > 0) ? profundidadMax : int.MaxValue;
+
+        for (int iteracion = 0; iteracion < limite && openSet.Count > 0; iteracion++)
         {
+            // Seleccionar nodo con menor FCost
             Node currentNode = openSet[0];
             for (int i = 1; i < openSet.Count; i++)
             {
-                if (openSet[i].FCost < currentNode.FCost || 
+                if (openSet[i].FCost < currentNode.FCost ||
                    (openSet[i].FCost == currentNode.FCost && openSet[i].hCost < currentNode.hCost))
-                {
                     currentNode = openSet[i];
-                }
             }
 
             openSet.Remove(currentNode);
             closedSet.Add(currentNode);
 
+            // Objetivo encontrado 
             if (currentNode == targetNode)
-            {
                 return RetracePath(startNode, targetNode);
-            }
 
+            // Expandir vecinos
             foreach (Node vecino in gridManager.GetNeighbours(currentNode))
             {
-                if (!vecino.walkable || closedSet.Contains(vecino) || (historialProfe != null && historialProfe.Contains(vecino)))
-                {
+                if (!vecino.walkable || closedSet.Contains(vecino) ||
+                    (historialProfe != null && historialProfe.Contains(vecino)))
                     continue;
-                }
 
-                int nuevoCostoALVecino = currentNode.gCost + GetDistance(currentNode, vecino);
+                int nuevoCosto = currentNode.gCost + GetDistance(currentNode, vecino);
 
-                if (nuevoCostoALVecino < vecino.gCost || !openSet.Contains(vecino))
+                if (nuevoCosto < vecino.gCost || !openSet.Contains(vecino))
                 {
-                    vecino.gCost = nuevoCostoALVecino;
-                    vecino.hCost = GetDistance(vecino, targetNode);
+                    vecino.gCost  = nuevoCosto;
+                    vecino.hCost  = GetDistance(vecino, targetNode);
                     vecino.Parent = currentNode;
 
                     if (!openSet.Contains(vecino))
-                    {
                         openSet.Add(vecino);
-                    }
                 }
             }
         }
 
-        return new List<Node>(); 
+        // Se agotaron las iteraciones — devolver camino al nodo más cercano al objetivo
+        if (openSet.Count > 0)
+        {
+            Node mejorParcial = openSet[0];
+            foreach (Node n in openSet)
+                if (n.hCost < mejorParcial.hCost)
+                    mejorParcial = n;
+
+            return RetracePath(startNode, mejorParcial);
+        }
+
+        return new List<Node>();
     }
 }

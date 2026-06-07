@@ -3,23 +3,6 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.UI;
 
-/// <summary>
-/// Gestiona las condiciones de victoria y derrota.
-/// Escucha CoinManager.OnAllCoinsCollected para la victoria.
-///
-/// SETUP EN UNITY (SampleScene):
-///   1. Crea un GameObject vacío "GameManager" y adjunta este script.
-///   2. Crea un Panel "panelVictoria" en el Canvas con:
-///      - TextMeshPro "txtVictoria"  (ej: "¡Escapaste!")
-///      - TextMeshPro "txtTiempoFinal"
-///      - Button "btnMenuVictoria"   (volver al menú)
-///   3. Crea un Panel "panelDerrota" en el Canvas con:
-///      - TextMeshPro "txtDerrota"   (ej: "¡Te atraparon!")
-///      - Button "btnReintentar"
-///      - Button "btnMenuDerrota"
-///   4. Arrastra los paneles y botones al Inspector de GameManager.
-///   5. Ambos paneles empiezan DESACTIVADOS.
-/// </summary>
 public class GameManager : MonoBehaviour
 {
     [Header("Panel de Victoria")]
