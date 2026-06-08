@@ -575,7 +575,7 @@ MonoBehaviour:
   tiempoEntreRecalculos: 0.5
   profundidadBusqueda: 5
   radioCaptura: 1.5
-  radioVision: 8
+  radioVision: 25
   capasParedes:
     serializedVersion: 2
     m_Bits: 64
@@ -21570,7 +21570,7 @@ MonoBehaviour:
   tiempoEntreRecalculos: 0.5
   profundidadBusqueda: 5
   radioCaptura: 1.5
-  radioVision: 8
+  radioVision: 25
   capasParedes:
     serializedVersion: 2
     m_Bits: 64
@@ -24460,7 +24460,7 @@ MonoBehaviour:
   tiempoEntreRecalculos: 0.5
   profundidadBusqueda: 5
   radioCaptura: 1.5
-  radioVision: 15
+  radioVision: 25
   capasParedes:
     serializedVersion: 2
     m_Bits: 64

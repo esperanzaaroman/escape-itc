@@ -111,14 +111,7 @@ public class profe : MonoBehaviour
         // ── Pathfinding hacia moneda o jugador
         cronometro += Time.deltaTime;
 
-        // Si ve al jugador, interrumpe cualquier camino actual
-        if (_veAlJugador && corrutinaMovimiento != null)
-        {
-            StopCoroutine(corrutinaMovimiento);
-            corrutinaMovimiento = null;
-        }
-
-        if (cronometro >= tiempoEntreRecalculos && corrutinaMovimiento == null)
+        if (cronometro >= tiempoEntreRecalculos)
         {
             Node nodoObjetivo = _veAlJugador
                 ? gridManager.NodeFromWorldPoint(_player.transform.position)
@@ -126,14 +119,19 @@ public class profe : MonoBehaviour
 
             if (nodoObjetivo != null && (nodoObjetivo != targetNode || _veAlJugador))
             {
+                // Interrumpir camino actual para recalcular
+                if (corrutinaMovimiento != null)
+                {
+                    StopCoroutine(corrutinaMovimiento);
+                    corrutinaMovimiento = null;
+                }
+
                 targetNode = nodoObjetivo;
 
                 Node nodoActualReal = gridManager.NodeFromWorldPoint(transform.position);
                 if (nodoActualReal != null)
                     currentNode = nodoActualReal;
 
-                // Búsqueda con profundidad limitada
-                // Al perseguir al jugador ignoramos el historial para no bloquearnos
                 Queue<Node> historial = _veAlJugador ? null : historialNodos;
                 currentPath = PathFinding.FindPath(currentNode, targetNode,
                                                    historial, profundidadBusqueda);
