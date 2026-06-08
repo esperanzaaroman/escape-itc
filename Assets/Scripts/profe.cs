@@ -30,6 +30,14 @@ public class profe : MonoBehaviour
 
     [Header("Detección de captura")]
     public float radioCaptura = 1.5f;
+
+    [Header("Línea de visión")]
+    [Tooltip("Distancia máxima a la que el profe puede ver al jugador")]
+    public float radioVision = 8f;
+    [Tooltip("LayerMask de las paredes — el mismo wallMask del GridManager")]
+    public LayerMask capasParedes;
+    private bool _veAlJugador = false;
+
     private GameManager _gameManager;
     private CharacterMovement _player;
     private bool _juegoTerminado = false;
@@ -80,26 +88,56 @@ public class profe : MonoBehaviour
             }
         }
 
-        // ── Pathfinding hacia la moneda
+        // ── Línea de visión al jugador
+        _veAlJugador = false;
+        if (_player != null)
+        {
+            Vector3 origen    = new Vector3(transform.position.x, 1f, transform.position.z);
+            Vector3 destino   = new Vector3(_player.transform.position.x, 1f, _player.transform.position.z);
+            Vector3 direccion = destino - origen;
+            float distancia   = direccion.magnitude;
+
+            Debug.Log($"[Visión] Player: {(_player == null ? "NULL" : "OK")} | Dist: {distancia:F1} | RadioVision: {radioVision}");
+            if (distancia <= radioVision)
+            {
+                RaycastHit hit;
+                bool choco = Physics.Raycast(origen, direccion.normalized, out hit, distancia, capasParedes);
+                Debug.Log($"[Visión] Chocó: {choco} | Objeto: {(choco ? hit.collider.name : "ninguno")}");
+                if (!choco)
+                    _veAlJugador = true;
+            }
+        }
+
+        // ── Pathfinding hacia moneda o jugador
         cronometro += Time.deltaTime;
+
+        // Si ve al jugador, interrumpe cualquier camino actual
+        if (_veAlJugador && corrutinaMovimiento != null)
+        {
+            StopCoroutine(corrutinaMovimiento);
+            corrutinaMovimiento = null;
+        }
 
         if (cronometro >= tiempoEntreRecalculos && corrutinaMovimiento == null)
         {
-            Node nodoMoneda = objetivo.getCurrentNode();
+            Node nodoObjetivo = _veAlJugador
+                ? gridManager.NodeFromWorldPoint(_player.transform.position)
+                : objetivo.getCurrentNode();
 
-            if (nodoMoneda != null && nodoMoneda != targetNode)
+            if (nodoObjetivo != null && (nodoObjetivo != targetNode || _veAlJugador))
             {
-                targetNode = nodoMoneda;
+                targetNode = nodoObjetivo;
 
                 Node nodoActualReal = gridManager.NodeFromWorldPoint(transform.position);
                 if (nodoActualReal != null)
                     currentNode = nodoActualReal;
 
                 // Búsqueda con profundidad limitada
+                // Al perseguir al jugador ignoramos el historial para no bloquearnos
+                Queue<Node> historial = _veAlJugador ? null : historialNodos;
                 currentPath = PathFinding.FindPath(currentNode, targetNode,
-                                                   historialNodos, profundidadBusqueda);
+                                                   historial, profundidadBusqueda);
 
-                // Si no encontró nada con historial, reintenta sin restricción de memoria
                 if ((currentPath == null || currentPath.Count == 0) && currentNode != targetNode)
                     currentPath = PathFinding.FindPath(currentNode, targetNode,
                                                        null, profundidadBusqueda);
@@ -139,6 +177,17 @@ public class profe : MonoBehaviour
                 Vector3 dir = (destino - transform.position);
                 dir.y = 0f;
                 dir.Normalize();
+
+                // Rotar el profe hacia donde se mueve (solo eje Y)
+                if (dir != Vector3.zero)
+                {
+                    float anguloY = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg + 90f;
+                    transform.rotation = Quaternion.Euler(
+                        transform.rotation.eulerAngles.x,
+                        anguloY,
+                        transform.rotation.eulerAngles.z
+                    );
+                }
 
                 float paso = Mathf.Min(speed * Time.deltaTime, distancia);
 
