@@ -574,7 +574,7 @@ MonoBehaviour:
   capacidadMemoria: 5
   tiempoEntreRecalculos: 0.5
   profundidadBusqueda: 5
-  radioCaptura: 1.5
+  radioCaptura: 2.5
   radioVision: 25
   capasParedes:
     serializedVersion: 2
@@ -21569,7 +21569,7 @@ MonoBehaviour:
   capacidadMemoria: 5
   tiempoEntreRecalculos: 0.5
   profundidadBusqueda: 5
-  radioCaptura: 1.5
+  radioCaptura: 2.5
   radioVision: 25
   capasParedes:
     serializedVersion: 2
@@ -24459,7 +24459,7 @@ MonoBehaviour:
   capacidadMemoria: 5
   tiempoEntreRecalculos: 0.5
   profundidadBusqueda: 5
-  radioCaptura: 1.5
+  radioCaptura: 2.5
   radioVision: 25
   capasParedes:
     serializedVersion: 2

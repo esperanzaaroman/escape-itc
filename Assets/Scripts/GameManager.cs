@@ -24,11 +24,13 @@ public class GameManager : MonoBehaviour
     void OnEnable()
     {
         CoinManager.OnAllCoinsCollected += MostrarVictoria;
+        CoinManager.OnProfeWins         += MostrarDerrota;
     }
 
     void OnDisable()
     {
         CoinManager.OnAllCoinsCollected -= MostrarVictoria;
+        CoinManager.OnProfeWins         -= MostrarDerrota;
     }
 
     void Start()

@@ -15,8 +15,9 @@ public class coin : MonoBehaviour
     private Queue<Node> historialNodos = new Queue<Node>();
     public int capacidadMemoria = 6;
 
-    // ── Evento que CoinManager escucha ────────────────────────────────────────
-    public static event System.Action<coin> OnCoinCollected;
+    // ── Eventos que CoinManager escucha ───────────────────────────────────────
+    public static event System.Action<coin> OnCoinCollectedByPlayer;
+    public static event System.Action<coin> OnCoinCollectedByProfe;
     private bool _collected = false;
 
     // ── API que usa profe.cs ──────────────────────────────────────────────────
@@ -142,7 +143,16 @@ public class coin : MonoBehaviour
     private void Collect()
     {
         _collected = true;
-        OnCoinCollected?.Invoke(this);
+        OnCoinCollectedByPlayer?.Invoke(this);
+        gameObject.SetActive(false);
+        Destroy(gameObject, 0.05f);
+    }
+
+    public void CollectByProfe()
+    {
+        if (_collected) return;
+        _collected = true;
+        OnCoinCollectedByProfe?.Invoke(this);
         gameObject.SetActive(false);
         Destroy(gameObject, 0.05f);
     }

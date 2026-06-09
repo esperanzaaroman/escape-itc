@@ -3,65 +3,97 @@ using System.Collections.Generic;
 
 public class CoinManager : MonoBehaviour
 {
-    [Header("IA — reasignación automática de objetivo")]
+    [Header("IA — profes en escena")]
     public List<profe> profes = new List<profe>();
 
-    [Header("HUD (opcional — se busca automáticamente si se deja vacío)")]
+    [Header("HUD")]
     public GameHUD hud;
 
-    public static event System.Action OnAllCoinsCollected;
+    [Header("Puntuación")]
+    public int monedasParaGanar = 5;
 
-    private List<coin> _remaining = new List<coin>();
-    private int _total     = 0;
-    private int _collected = 0;
+    // Eventos para GameManager
+    public static event System.Action OnAllCoinsCollected; // jugador gana
+    public static event System.Action OnProfeWins;         // profe gana
 
-    public int Score      => _collected;
-    public int TotalCoins => _total;
+    private List<coin> _coins        = new List<coin>();
+    private int        _coinIndex     = 0;
+    private int        _playerScore   = 0;
+    private int        _profeScore    = 0;
 
+    public int PlayerScore => _playerScore;
+    public int ProfeScore  => _profeScore;
+
+    // ─────────────────────────────────────────────────────────────────────────
     void Awake()
     {
         foreach (coin c in FindObjectsOfType<coin>())
-            _remaining.Add(c);
-        _total = _remaining.Count;
+        {
+            _coins.Add(c);
+            c.gameObject.SetActive(false);
+        }
 
         if (hud == null)
             hud = FindObjectOfType<GameHUD>();
     }
 
-    void OnEnable()  => coin.OnCoinCollected += HandleCoinCollected;
-    void OnDisable() => coin.OnCoinCollected -= HandleCoinCollected;
-
-    void Start() => hud?.ActualizarMonedas(_collected, _total);
-
-    private void HandleCoinCollected(coin recogida)
+    void OnEnable()
     {
-        _collected++;
-        _remaining.Remove(recogida);
-        hud?.ActualizarMonedas(_collected, _total);
+        coin.OnCoinCollectedByPlayer += HandlePlayer;
+        coin.OnCoinCollectedByProfe  += HandleProfe;
+    }
 
-        if (_remaining.Count == 0)
+    void OnDisable()
+    {
+        coin.OnCoinCollectedByPlayer -= HandlePlayer;
+        coin.OnCoinCollectedByProfe  -= HandleProfe;
+    }
+
+    void Start()
+    {
+        hud?.ActualizarMarcador(_playerScore, _profeScore);
+        ActivarSiguiente();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    void ActivarSiguiente()
+    {
+        if (_coinIndex >= _coins.Count) return;
+
+        coin siguiente = _coins[_coinIndex];
+        siguiente.gameObject.SetActive(true);
+        _coinIndex++;
+
+        foreach (profe p in profes)
+            if (p != null && p.gameObject.activeSelf)
+                p.objetivo = siguiente;
+    }
+
+    void HandlePlayer(coin recogida)
+    {
+        _playerScore++;
+        hud?.ActualizarMarcador(_playerScore, _profeScore);
+
+        if (_playerScore >= monedasParaGanar)
         {
             OnAllCoinsCollected?.Invoke();
             return;
         }
 
-        foreach (profe p in profes)
-            if (p != null && p.objetivo == recogida)
-                p.objetivo = GetNearestCoin(p.transform.position);
+        ActivarSiguiente();
     }
 
-    public coin GetNearestCoin(Vector3 desde)
+    void HandleProfe(coin recogida)
     {
-        coin nearest  = null;
-        float minDist = float.MaxValue;
-        foreach (coin c in _remaining)
-        {
-            if (c == null) continue;
-            float d = Vector3.Distance(desde, c.transform.position);
-            if (d < minDist) { minDist = d; nearest = c; }
-        }
-        return nearest;
-    }
+        _profeScore++;
+        hud?.ActualizarMarcador(_playerScore, _profeScore);
 
-    public List<coin> GetRemainingCoins() => _remaining;
+        if (_profeScore >= monedasParaGanar)
+        {
+            OnProfeWins?.Invoke();
+            return;
+        }
+
+        ActivarSiguiente();
+    }
 }

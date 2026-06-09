@@ -34,10 +34,16 @@ public class GameHUD : MonoBehaviour
             txtTiempo.text = "Tiempo: " + FormatearTiempo(_tiempoTranscurrido);
     }
 
-    public void ActualizarMonedas(int recogidas, int total)
+    public void ActualizarMarcador(int jugador, int profe)
     {
         if (txtMonedas != null)
-            txtMonedas.text = $"Monedas: {recogidas} / {total}";
+            txtMonedas.text = $"Tú: {jugador}  |  Profe: {profe}";
+    }
+
+    // Mantener compatibilidad
+    public void ActualizarMonedas(int recogidas, int total)
+    {
+        ActualizarMarcador(recogidas, 0);
     }
 
     // GameManager usa esto para mostrar el tiempo final en pantalla de victoria

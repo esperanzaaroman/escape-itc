@@ -31,6 +31,9 @@ public class profe : MonoBehaviour
     [Header("Detección de captura")]
     public float radioCaptura = 1.5f;
 
+    [Header("Recolección de monedas")]
+    public float radioRecoleccion = 1.0f;
+
     [Header("Línea de visión")]
     [Tooltip("Distancia máxima a la que el profe puede ver al jugador")]
     public float radioVision = 8f;
@@ -86,6 +89,17 @@ public class profe : MonoBehaviour
                 _gameManager?.MostrarDerrota();
                 return;
             }
+        }
+
+        // ── Recolección de moneda por proximidad
+        if (objetivo != null && !objetivo.IsCollected)
+        {
+            float distMoneda = Vector3.Distance(
+                new Vector3(transform.position.x, 0f, transform.position.z),
+                new Vector3(objetivo.transform.position.x, 0f, objetivo.transform.position.z)
+            );
+            if (distMoneda <= radioRecoleccion)
+                objetivo.CollectByProfe();
         }
 
         // ── Línea de visión al jugador
