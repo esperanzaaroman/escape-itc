@@ -73,7 +73,6 @@ public class MenuPrincipal : MonoBehaviour
         if (index < profes.Length && profes[index] != null)
         {
             ProfeData d = profes[index];
-            if (imgPreview     != null) imgPreview.sprite   = d.foto;
             if (txtNombreProfe != null) txtNombreProfe.text = d.nombre;
             if (txtDescProfe   != null) txtDescProfe.text   =
                 $"Velocidad: {d.velocidad}  |  Memoria: {d.capacidadMemoria} nodos\n{d.descripcion}";

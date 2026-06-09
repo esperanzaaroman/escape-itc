@@ -22,10 +22,7 @@ public class profe : MonoBehaviour
     private float cronometro = 0f;
 
     [Header("Profundidad de búsqueda A*")]
-    [Tooltip("Máximo de nodos que el A* expande por búsqueda.\n" +
-             "5  = muy limitado, comportamiento casi aleatorio.\n" +
-             "20 = equilibrio recomendado.\n" +
-             "-1 = sin límite (búsqueda completa).")]
+    [Tooltip("Iteraciones del A* por búsqueda. -1 = sin límite.")]
     public int profundidadBusqueda = 20;
 
     [Header("Detección de captura")]
@@ -35,17 +32,25 @@ public class profe : MonoBehaviour
     public float radioRecoleccion = 1.0f;
 
     [Header("Línea de visión")]
-    [Tooltip("Distancia máxima a la que el profe puede ver al jugador")]
     public float radioVision = 8f;
-    [Tooltip("LayerMask de las paredes — el mismo wallMask del GridManager")]
     public LayerMask capasParedes;
     private bool _veAlJugador = false;
+
+    // Sonidito de miedo
+    [Header("Sonido de tensión")]
+    [Tooltip("AudioSource en este mismo GameObject con el sonido de alerta/tensión")]
+    public AudioSource audioTension;
+
+    [Tooltip("Volumen máximo cuando el profe ve al jugador (0-1)")]
+    public float volumenMax = 1f;
+
+    [Tooltip("Qué tan rápido sube/baja el volumen")]
+    public float velocidadFade = 2f;
 
     private GameManager _gameManager;
     private CharacterMovement _player;
     private bool _juegoTerminado = false;
 
-    // ─────────────────────────────────────────────────────────────────────────
     void Start()
     {
         PathFinding = new PathFinding();
@@ -53,6 +58,13 @@ public class profe : MonoBehaviour
 
         _gameManager = FindObjectOfType<GameManager>();
         _player      = FindObjectOfType<CharacterMovement>();
+
+        if (audioTension != null)
+        {
+            audioTension.loop   = true;
+            audioTension.volume = 0f;
+            audioTension.Play();
+        }
 
         StartCoroutine(IniciarConRetraso());
     }
@@ -63,10 +75,8 @@ public class profe : MonoBehaviour
         yield return null;
 
         if (gridManager == null || gridManager.grid == null) yield break;
-
         currentNode = gridManager.NodeFromWorldPoint(transform.position);
         if (currentNode == null) yield break;
-
         Debug.Log("Profe inicializado en nodo: " + currentNode.x + "," + currentNode.y);
     }
 
@@ -75,7 +85,7 @@ public class profe : MonoBehaviour
         if (_juegoTerminado) return;
         if (gridManager == null || gridManager.grid == null || objetivo == null) return;
 
-        // ── Detección de captura por distancia 
+        // ── Captura ───────────────────────────────────────────────────────────
         if (_player != null)
         {
             float dist = Vector3.Distance(
@@ -91,7 +101,7 @@ public class profe : MonoBehaviour
             }
         }
 
-        // ── Recolección de moneda por proximidad
+        // ── Recolección de moneda por proximidad ──────────────────────────────
         if (objetivo != null && !objetivo.IsCollected)
         {
             float distMoneda = Vector3.Distance(
@@ -102,7 +112,7 @@ public class profe : MonoBehaviour
                 objetivo.CollectByProfe();
         }
 
-        // ── Línea de visión al jugador
+        // ── Línea de visión al jugador ────────────────────────────────────────
         _veAlJugador = false;
         if (_player != null)
         {
@@ -111,18 +121,19 @@ public class profe : MonoBehaviour
             Vector3 direccion = destino - origen;
             float distancia   = direccion.magnitude;
 
-            Debug.Log($"[Visión] Player: {(_player == null ? "NULL" : "OK")} | Dist: {distancia:F1} | RadioVision: {radioVision}");
             if (distancia <= radioVision)
             {
                 RaycastHit hit;
                 bool choco = Physics.Raycast(origen, direccion.normalized, out hit, distancia, capasParedes);
-                Debug.Log($"[Visión] Chocó: {choco} | Objeto: {(choco ? hit.collider.name : "ninguno")}");
                 if (!choco)
                     _veAlJugador = true;
             }
+
+            // ── Sonido: sube si ve al jugador, baja si no ─────────────────────
+            ActualizarSonido(distancia);
         }
 
-        // ── Pathfinding hacia moneda o jugador
+        // ── Pathfinding ───────────────────────────────────────────────────────
         cronometro += Time.deltaTime;
 
         if (cronometro >= tiempoEntreRecalculos)
@@ -133,7 +144,6 @@ public class profe : MonoBehaviour
 
             if (nodoObjetivo != null && (nodoObjetivo != targetNode || _veAlJugador))
             {
-                // Interrumpir camino actual para recalcular
                 if (corrutinaMovimiento != null)
                 {
                     StopCoroutine(corrutinaMovimiento);
@@ -147,12 +157,10 @@ public class profe : MonoBehaviour
                     currentNode = nodoActualReal;
 
                 Queue<Node> historial = _veAlJugador ? null : historialNodos;
-                currentPath = PathFinding.FindPath(currentNode, targetNode,
-                                                   historial, profundidadBusqueda);
+                currentPath = PathFinding.FindPath(currentNode, targetNode, historial, profundidadBusqueda);
 
                 if ((currentPath == null || currentPath.Count == 0) && currentNode != targetNode)
-                    currentPath = PathFinding.FindPath(currentNode, targetNode,
-                                                       null, profundidadBusqueda);
+                    currentPath = PathFinding.FindPath(currentNode, targetNode, null, profundidadBusqueda);
 
                 if (currentPath != null && currentPath.Count > 0)
                     corrutinaMovimiento = StartCoroutine(SeguirCamino());
@@ -160,6 +168,31 @@ public class profe : MonoBehaviour
 
             cronometro = 0f;
         }
+    }
+
+    // ── Sube o baja el volumen suavemente según si ve al jugador 
+    void ActualizarSonido(float distanciaAlJugador)
+    {
+        if (audioTension == null) return;
+
+        float volumenObjetivo;
+
+        if (_veAlJugador)
+        {
+            // volumen proporcional a qué tan cerca está
+
+            float t = 1f - Mathf.Clamp01((distanciaAlJugador - radioCaptura) / (radioVision - radioCaptura));
+            volumenObjetivo = Mathf.Lerp(volumenMax * 0.2f, volumenMax, t);
+        }
+        else
+        {
+            // No ve al jugador
+            volumenObjetivo = 0.1f;
+        }
+
+        // Fade suave hacia el volumen objetivo
+        audioTension.volume = Mathf.MoveTowards(audioTension.volume, volumenObjetivo,
+                                                 velocidadFade * Time.deltaTime);
     }
 
     void ActualizarHistorialMemoria(Node nodoVisitado)
@@ -190,7 +223,6 @@ public class profe : MonoBehaviour
                 dir.y = 0f;
                 dir.Normalize();
 
-                // Rotar el profe hacia donde se mueve (solo eje Y)
                 if (dir != Vector3.zero)
                 {
                     float anguloY = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg + 90f;
@@ -201,8 +233,7 @@ public class profe : MonoBehaviour
                     );
                 }
 
-                float paso = Mathf.Min(speed * Time.deltaTime, distancia);
-
+                float paso     = Mathf.Min(speed * Time.deltaTime, distancia);
                 Vector4 pos    = new Vector4(transform.position.x, transform.position.y, transform.position.z, 1f);
                 Matrix4x4 T    = Transformations.TranslateM(dir.x * paso, 0f, dir.z * paso);
                 Vector4 newPos = T * pos;

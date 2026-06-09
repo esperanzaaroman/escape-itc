@@ -1,13 +1,5 @@
 using UnityEngine;
 
-/// Lee GameConfig.ProfeElegido al inicio de SampleScene
-/// y activa solo el profe seleccionado, desactivando los demás.
-/// 
-/// SETUP EN UNITY (SampleScene):
-///   1. Adjunta este script a un GameObject vacío "ProfeSpawner".
-///   2. Arrastra los 3 GameObjects de profe (Base, Base(1), Base(2))
-///      al array en el Inspector — EN EL MISMO ORDEN que en el menú.
-
 public class ProfeSpawner : MonoBehaviour
 {
     [Header("GameObjects de los 3 profes en escena")]

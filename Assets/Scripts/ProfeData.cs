@@ -12,8 +12,6 @@ public class ProfeData
     [TextArea(2, 3)]
     public string descripcion;
 
-    public Sprite foto;
-
     [Header("Stats")]
     public float speed            = 5f;
     public int   capacidadMemoria = 5;
