@@ -1806,7 +1806,7 @@ MonoBehaviour:
   - {fileID: 49508763}
   - {fileID: 1745148097}
   hud: {fileID: 420661187}
-  monedasParaGanar: 6
+  monedasParaGanar: 5
 --- !u!222 &136944855
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4929,7 +4929,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8949837501148381885, guid: 3f8475149b52df74d8d674a1d7b46ac5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -10.54
+      value: -8.13
       objectReference: {fileID: 0}
     - target: {fileID: 8949837501148381885, guid: 3f8475149b52df74d8d674a1d7b46ac5, type: 3}
       propertyPath: m_LocalPosition.y
@@ -4937,7 +4937,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8949837501148381885, guid: 3f8475149b52df74d8d674a1d7b46ac5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -8.91
+      value: 11.79
       objectReference: {fileID: 0}
     - target: {fileID: 8949837501148381885, guid: 3f8475149b52df74d8d674a1d7b46ac5, type: 3}
       propertyPath: m_LocalRotation.w
@@ -22382,7 +22382,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::profe
   objetivo: {fileID: 1276430090}
-  speed: 15
+  speed: 25
   gridManager: {fileID: 763841372}
   capacidadMemoria: 5
   tiempoEntreRecalculos: 0.5

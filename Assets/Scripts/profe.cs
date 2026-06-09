@@ -85,7 +85,7 @@ public class profe : MonoBehaviour
         if (_juegoTerminado) return;
         if (gridManager == null || gridManager.grid == null || objetivo == null) return;
 
-        // ── Captura ───────────────────────────────────────────────────────────
+        // ── Captura 
         if (_player != null)
         {
             float dist = Vector3.Distance(
